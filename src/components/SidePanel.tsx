@@ -2,13 +2,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LayoutDashboard, Settings, Users, UserCheck } from "lucide-react";
 import { useRole } from "@/contexts/RoleContext";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
 
 interface SidePanelProps {
   onTabChange: (value: string) => void;
 }
 
 const SidePanel = ({ onTabChange }: SidePanelProps) => {
-  const { userRole, isLoading, canAccessTab } = useRole();
+  const { userRole, isLoading, error, canAccessTab } = useRole();
+  const { toast } = useToast();
 
   const getTabs = () => {
     const tabs = [
@@ -53,6 +55,14 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
         </div>
       </div>
     );
+  }
+
+  if (error) {
+    toast({
+      title: "Error loading navigation",
+      description: "Please refresh the page to try again",
+      variant: "destructive",
+    });
   }
 
   return (
