@@ -5,15 +5,16 @@ import DashboardView from '@/components/DashboardView';
 import MembersList from '@/components/MembersList';
 import CollectorsList from '@/components/CollectorsList';
 import SidePanel from '@/components/SidePanel';
-import { useRoleAccess } from '@/hooks/useRoleAccess';
+import { useRole } from '@/contexts/RoleContext';
 import { useToast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { userRole, roleLoading, canAccessTab } = useRoleAccess();
+  const { userRole, isLoading, error, canAccessTab } = useRole();
 
   const checkAuth = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -32,7 +33,7 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
-    if (!roleLoading && !canAccessTab(activeTab)) {
+    if (!isLoading && !canAccessTab(activeTab)) {
       setActiveTab('dashboard');
       toast({
         title: "Access Restricted",
@@ -40,7 +41,36 @@ const Index = () => {
         variant: "destructive",
       });
     }
-  }, [activeTab, roleLoading, userRole]);
+  }, [activeTab, isLoading, userRole]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-dashboard-dark">
+        <div className="pl-64">
+          <div className="p-8">
+            <Skeleton className="h-8 w-48 mb-4 bg-white/5" />
+            <Skeleton className="h-64 w-full bg-white/5" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-dashboard-dark flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl text-red-400 mb-4">Error loading user role</h2>
+          <button 
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const renderContent = () => {
     if (!canAccessTab(activeTab)) {
@@ -77,7 +107,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-dashboard-dark">
-      <SidePanel onTabChange={setActiveTab} userRole={userRole} />
+      <SidePanel onTabChange={setActiveTab} />
       <div className="pl-64">
         <div className="p-8">
           {renderContent()}

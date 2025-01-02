@@ -1,13 +1,15 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LayoutDashboard, Settings, Users, UserCheck } from "lucide-react";
-import { UserRole } from "@/hooks/useRoleAccess";
+import { useRole } from "@/contexts/RoleContext";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface SidePanelProps {
   onTabChange: (value: string) => void;
-  userRole: UserRole;
 }
 
-const SidePanel = ({ onTabChange, userRole }: SidePanelProps) => {
+const SidePanel = ({ onTabChange }: SidePanelProps) => {
+  const { userRole, isLoading, canAccessTab } = useRole();
+
   const getTabs = () => {
     const tabs = [
       {
@@ -37,11 +39,21 @@ const SidePanel = ({ onTabChange, userRole }: SidePanelProps) => {
     ];
 
     // Only show tabs that the user has access to based on their role
-    return tabs.filter(tab => {
-      if (!userRole) return false;
-      return tab.roles.includes(userRole);
-    });
+    return tabs.filter(tab => canAccessTab(tab.value));
   };
+
+  if (isLoading) {
+    return (
+      <div className="h-screen fixed left-0 top-0 w-64 glass-card border-r border-white/10 p-6">
+        <h2 className="text-xl font-medium mb-6">Navigation</h2>
+        <div className="space-y-2">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-10 w-full bg-white/5" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen fixed left-0 top-0 w-64 glass-card border-r border-white/10">
