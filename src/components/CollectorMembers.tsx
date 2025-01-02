@@ -3,25 +3,53 @@ import { supabase } from "@/integrations/supabase/client";
 import { Database } from '@/integrations/supabase/types';
 import { User } from 'lucide-react';
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useToast } from "@/hooks/use-toast";
 
 type Member = Database['public']['Tables']['members']['Row'];
 
 const CollectorMembers = ({ collectorName }: { collectorName: string }) => {
-  const { data: members, isLoading } = useQuery({
+  const { toast } = useToast();
+  
+  const { data: members, isLoading, error } = useQuery({
     queryKey: ['collector_members', collectorName],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('members')
-        .select('*')
-        .eq('collector', collectorName)
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data as Member[];
+      try {
+        const { data, error } = await supabase
+          .from('members')
+          .select('*')
+          .eq('collector', collectorName)
+          .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        return data as Member[];
+      } catch (error) {
+        console.error('Error fetching collector members:', error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch collector members",
+          variant: "destructive",
+        });
+        throw error;
+      }
     },
   });
 
-  if (isLoading) return <div>Loading members...</div>;
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-4">
+        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-4 text-red-500">
+        Error loading members
+      </div>
+    );
+  }
+
   if (!members?.length) return null;
 
   return (
