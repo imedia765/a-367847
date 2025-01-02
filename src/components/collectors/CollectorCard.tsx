@@ -1,12 +1,20 @@
 import { UserCheck } from 'lucide-react';
-import { Database } from '@/integrations/supabase/types';
 import { AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import CollectorMembers from "@/components/CollectorMembers";
 import PrintButtons from "@/components/PrintButtons";
 
-type CollectorWithCount = Database['public']['Tables']['members_collectors']['Row'] & {
+export interface CollectorWithCount {
+  id: string;
+  name: string | null;
+  prefix: string | null;
+  number: string | null;
+  email: string | null;
+  phone: string | null;
+  active: boolean | null;
+  created_at: string;
+  updated_at: string;
   memberCount: number;
-};
+}
 
 interface CollectorCardProps {
   collector: CollectorWithCount;
