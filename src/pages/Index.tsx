@@ -1,172 +1,73 @@
-import { ShoppingCart, Smartphone, Box, UserPlus, Key, Bell, Globe, Shield, Moon } from 'lucide-react';
-import MetricCard from '@/components/MetricCard';
-import MonthlyChart from '@/components/MonthlyChart';
-import CustomerRequests from '@/components/CustomerRequests';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from "@/integrations/supabase/client";
+import DashboardView from '@/components/DashboardView';
+import MembersList from '@/components/MembersList';
+import CollectorsList from '@/components/CollectorsList';
 import SidePanel from '@/components/SidePanel';
-import { useState } from 'react';
-import { Switch } from "@/components/ui/switch";
+import { useRoleAccess } from '@/hooks/useRoleAccess';
+import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [searchTerm, setSearchTerm] = useState('');
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { userRole, roleLoading, canAccessTab } = useRoleAccess();
+
+  const checkAuth = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      navigate('/login');
+    }
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('/login');
+  };
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  useEffect(() => {
+    if (!roleLoading && !canAccessTab(activeTab)) {
+      setActiveTab('dashboard');
+      toast({
+        title: "Access Restricted",
+        description: "You don't have permission to access this section.",
+        variant: "destructive",
+      });
+    }
+  }, [activeTab, roleLoading, userRole]);
 
   const renderContent = () => {
+    if (!canAccessTab(activeTab)) {
+      return <DashboardView onLogout={handleLogout} />;
+    }
+
     switch (activeTab) {
       case 'dashboard':
-        return (
-          <>
-            <header className="mb-8">
-              <h1 className="text-3xl font-medium mb-2">Dashboard</h1>
-              <p className="text-dashboard-muted">Below is an example dashboard created using charts from this plugin</p>
-            </header>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-              <MetricCard
-                title="Shop"
-                value={68}
-                color="#7EBF8E"
-              />
-              <MetricCard
-                title="Mobile"
-                value={52}
-                color="#8989DE"
-              />
-              <MetricCard
-                title="Other"
-                value={85}
-                color="#61AAF2"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <MonthlyChart />
-              <CustomerRequests />
-            </div>
-          </>
-        );
+        return <DashboardView onLogout={handleLogout} />;
       case 'users':
         return (
           <>
             <header className="mb-8">
-              <h1 className="text-3xl font-medium mb-2">Users</h1>
-              <p className="text-dashboard-muted">Manage your users and their permissions</p>
+              <h1 className="text-3xl font-medium mb-2 text-white">Members</h1>
+              <p className="text-dashboard-muted">View and manage member information</p>
             </header>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="dashboard-card">
-                <div className="flex items-center gap-3 mb-4">
-                  <UserPlus className="w-5 h-5 text-blue-400" />
-                  <h2 className="text-xl font-medium">Active Users</h2>
-                </div>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-3 glass-card">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center">JD</div>
-                      <div>
-                        <p className="font-medium">John Doe</p>
-                        <p className="text-sm text-gray-400">Administrator</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Key className="w-4 h-4 text-green-400" />
-                      <span className="text-sm text-green-400">Active</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between p-3 glass-card">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-purple-500 flex items-center justify-center">AS</div>
-                      <div>
-                        <p className="font-medium">Alice Smith</p>
-                        <p className="text-sm text-gray-400">Editor</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Key className="w-4 h-4 text-green-400" />
-                      <span className="text-sm text-green-400">Active</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="dashboard-card">
-                <div className="flex items-center gap-3 mb-4">
-                  <Shield className="w-5 h-5 text-purple-400" />
-                  <h2 className="text-xl font-medium">Permissions</h2>
-                </div>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-3 glass-card">
-                    <div>
-                      <p className="font-medium">Admin Access</p>
-                      <p className="text-sm text-gray-400">Full system access</p>
-                    </div>
-                    <Switch />
-                  </div>
-                  <div className="flex items-center justify-between p-3 glass-card">
-                    <div>
-                      <p className="font-medium">Editor Access</p>
-                      <p className="text-sm text-gray-400">Content management</p>
-                    </div>
-                    <Switch />
-                  </div>
-                </div>
-              </div>
-            </div>
+            <MembersList searchTerm={searchTerm} userRole={userRole} />
           </>
         );
-      case 'settings':
+      case 'collectors':
         return (
           <>
             <header className="mb-8">
-              <h1 className="text-3xl font-medium mb-2">Settings</h1>
-              <p className="text-dashboard-muted">Configure your application settings</p>
+              <h1 className="text-3xl font-medium mb-2 text-white">Collectors</h1>
+              <p className="text-dashboard-muted">View and manage collector information</p>
             </header>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="dashboard-card">
-                <div className="flex items-center gap-3 mb-4">
-                  <Bell className="w-5 h-5 text-yellow-400" />
-                  <h2 className="text-xl font-medium">Notifications</h2>
-                </div>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">Email Notifications</p>
-                      <p className="text-sm text-gray-400">Receive email updates</p>
-                    </div>
-                    <Switch />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">Push Notifications</p>
-                      <p className="text-sm text-gray-400">Receive push notifications</p>
-                    </div>
-                    <Switch />
-                  </div>
-                </div>
-              </div>
-              <div className="dashboard-card">
-                <div className="flex items-center gap-3 mb-4">
-                  <Globe className="w-5 h-5 text-green-400" />
-                  <h2 className="text-xl font-medium">Preferences</h2>
-                </div>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">Language</p>
-                      <p className="text-sm text-gray-400">Select your language</p>
-                    </div>
-                    <select className="bg-transparent border border-white/10 rounded-md px-2 py-1">
-                      <option value="en">English</option>
-                      <option value="es">Spanish</option>
-                      <option value="fr">French</option>
-                    </select>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">Dark Mode</p>
-                      <p className="text-sm text-gray-400">Toggle dark mode</p>
-                    </div>
-                    <Switch />
-                  </div>
-                </div>
-              </div>
-            </div>
+            <CollectorsList />
           </>
         );
       default:
@@ -175,8 +76,8 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen">
-      <SidePanel onTabChange={setActiveTab} />
+    <div className="min-h-screen bg-dashboard-dark">
+      <SidePanel onTabChange={setActiveTab} userRole={userRole} />
       <div className="pl-64">
         <div className="p-8">
           {renderContent()}
