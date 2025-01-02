@@ -1,17 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from '@/integrations/supabase/types';
-import { UserCheck, Users } from 'lucide-react';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import TotalCount from "@/components/TotalCount";
-import CollectorMembers from "@/components/CollectorMembers";
-import PrintButtons from "@/components/PrintButtons";
+import { Accordion } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
+import CollectorCard from './collectors/CollectorCard';
+import CollectorsHeader from './collectors/CollectorsHeader';
 
 type MemberCollector = Database['public']['Tables']['members_collectors']['Row'];
 type Member = Database['public']['Tables']['members']['Row'];
@@ -132,71 +125,15 @@ const CollectorsList = () => {
 
   return (
     <div className="space-y-4">
-      <TotalCount 
-        items={[
-          {
-            count: totalMembers,
-            label: "Total Members",
-            icon: <Users className="w-6 h-6 text-blue-400" />
-          },
-          {
-            count: collectors.length,
-            label: "Total Collectors",
-            icon: <UserCheck className="w-6 h-6 text-purple-400" />
-          }
-        ]}
+      <CollectorsHeader 
+        totalMembers={totalMembers}
+        totalCollectors={collectors.length}
+        allMembers={allMembers}
       />
-      <div className="flex justify-end mb-4">
-        <PrintButtons allMembers={allMembers} />
-      </div>
 
       <Accordion type="single" collapsible className="space-y-4">
-        {collectors.map((collector) => (          
-          <AccordionItem
-            key={collector.id}
-            value={collector.id}
-            className="bg-dashboard-card border border-white/10 rounded-lg overflow-hidden"
-          >
-            <AccordionTrigger className="px-4 py-3 hover:no-underline">
-              <div className="flex items-center justify-between w-full">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-dashboard-accent1 flex items-center justify-center text-white font-medium">
-                    {collector.prefix}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium text-white">{collector.name}</p>
-                      <span className="text-sm text-gray-400">#{collector.number}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-dashboard-text">
-                      <UserCheck className="w-4 h-4" />
-                      <span>Collector</span>
-                      <span className="text-purple-400">({collector.memberCount} members)</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <PrintButtons collectorName={collector.name || ''} />
-                  <div className={`px-3 py-1 rounded-full ${
-                    collector.active 
-                      ? 'bg-green-500/20 text-green-400' 
-                      : 'bg-gray-500/20 text-gray-400'
-                  }`}>
-                    {collector.active ? 'Active' : 'Inactive'}
-                  </div>
-                </div>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="px-4 pb-4">
-              <div className="space-y-3 mt-2">
-                {collector.memberCount > 0 ? (
-                  <CollectorMembers collectorName={collector.name || ''} />
-                ) : (
-                  <p className="text-sm text-gray-400">No members assigned to this collector</p>
-                )}
-              </div>
-            </AccordionContent>
-          </AccordionItem>
+        {collectors.map((collector) => (
+          <CollectorCard key={collector.id} collector={collector} />
         ))}
       </Accordion>
     </div>
