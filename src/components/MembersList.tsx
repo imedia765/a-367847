@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from "@/integrations/supabase/client";
-import { Database } from '@/integrations/supabase/types';
+import { Database } from '@/types/database.types';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -25,14 +25,13 @@ const MembersList = ({ searchTerm, userRole }: MembersListProps) => {
         query = query.or(`full_name.ilike.%${searchTerm}%,member_number.ilike.%${searchTerm}%,collector.ilike.%${searchTerm}%`);
       }
 
-      // If user is a collector, only show their assigned members
       if (userRole === 'collector') {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           const { data: collectorProfile } = await supabase
-            .from('profiles')
+            .from('members')
             .select('*')
-            .eq('auth_user_id', user.id)
+            .eq('id', user.id)
             .single();
           
           if (collectorProfile) {
@@ -44,17 +43,13 @@ const MembersList = ({ searchTerm, userRole }: MembersListProps) => {
       const { data, error } = await query
         .order('created_at', { ascending: false });
       
-      if (error) {
-        console.error('Error fetching members:', error);
-        throw error;
-      }
-      
+      if (error) throw error;
       return data as Member[];
     },
   });
 
   if (isLoading) return <div className="text-center py-4">Loading members...</div>;
-  if (error) return <div className="text-center py-4 text-red-500">Error loading members: {error.message}</div>;
+  if (error) return <div className="text-center py-4 text-red-500">Error loading members: {(error as Error).message}</div>;
   if (!members?.length) return <div className="text-center py-4">No members found</div>;
 
   return (
@@ -123,8 +118,8 @@ const MembersList = ({ searchTerm, userRole }: MembersListProps) => {
                     <p className="text-dashboard-text">{member.collector || 'Not assigned'}</p>
                   </div>
                   <div>
-                    <p className="text-dashboard-muted mb-1">Registration Status</p>
-                    <p className="text-dashboard-text">{member.registration_status || 'Pending'}</p>
+                    <p className="text-dashboard-muted mb-1">Status</p>
+                    <p className="text-dashboard-text">{member.status || 'Pending'}</p>
                   </div>
                 </div>
               </div>

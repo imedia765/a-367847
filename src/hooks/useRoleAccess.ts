@@ -1,8 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Database } from '@/types/database.types';
 
-export type UserRole = 'member' | 'collector' | 'admin' | null;
+type UserRole = Database['public']['Tables']['user_roles']['Row']['role'] | null;
 
 const ROLE_STALE_TIME = 1000 * 60 * 5; // 5 minutes
 

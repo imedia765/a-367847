@@ -2,8 +2,9 @@ import { createContext, useContext, ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Database } from '@/types/database.types';
 
-export type UserRole = 'member' | 'collector' | 'admin' | null;
+type UserRole = Database['public']['Tables']['user_roles']['Row']['role'] | null;
 
 interface RoleContextType {
   userRole: UserRole;
