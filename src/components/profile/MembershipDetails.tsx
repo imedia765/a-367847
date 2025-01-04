@@ -1,33 +1,33 @@
-import { Member } from "@/types/member";
-import RoleBadge from "./RoleBadge";
+import RoleBadge from './RoleBadge';
 
 interface MembershipDetailsProps {
-  memberProfile: Member;
-  userRole: string | null;
+  memberNumber: string;
+  role: string | null;
+  membershipType?: string;
+  status?: string;
 }
 
-const MembershipDetails = ({ memberProfile, userRole }: MembershipDetailsProps) => {
+const MembershipDetails = ({ memberNumber, role, membershipType = 'standard', status = 'active' }: MembershipDetailsProps) => {
   return (
-    <div className="space-y-2">
-      <p className="text-dashboard-muted text-sm">Membership Details</p>
-      <div className="space-y-2">
-        <p className="text-dashboard-text flex items-center gap-2">
-          Status:{' '}
-          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-            memberProfile?.status === 'active' 
-              ? 'bg-dashboard-accent3/20 text-dashboard-accent3' 
-              : 'bg-dashboard-muted/20 text-dashboard-muted'
-          }`}>
-            {memberProfile?.status || 'Pending'}
-          </span>
-        </p>
-        <p className="text-dashboard-text flex items-center gap-2">
-          <span className="text-dashboard-accent2">Type:</span>
-          <span className="flex items-center gap-2">
-            {memberProfile?.membership_type || 'Standard'}
-            <RoleBadge role={userRole} />
-          </span>
-        </p>
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-semibold">Membership Details</h3>
+        <RoleBadge role={role} />
+      </div>
+      
+      <div className="grid gap-2">
+        <div>
+          <span className="text-sm text-gray-500">Member Number:</span>
+          <span className="ml-2">{memberNumber}</span>
+        </div>
+        <div>
+          <span className="text-sm text-gray-500">Type:</span>
+          <span className="ml-2 capitalize">{membershipType}</span>
+        </div>
+        <div>
+          <span className="text-sm text-gray-500">Status:</span>
+          <span className="ml-2 capitalize">{status}</span>
+        </div>
       </div>
     </div>
   );

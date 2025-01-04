@@ -1,21 +1,9 @@
 import { supabase } from "@/integrations/supabase/client";
-import type { User } from '@supabase/supabase-js';
-
-interface Member {
-  id: string;
-  member_number: string;
-  auth_user_id?: string | null;
-  email?: string | null;
-  full_name?: string | null;
-}
-
-const normalizeMemberNumber = (memberNumber: string): string => {
-  return memberNumber.trim().toUpperCase();
-};
+import type { Member } from "@/types/member";
 
 export async function verifyMember(memberNumber: string): Promise<Member> {
   console.log('Verifying member:', memberNumber);
-  const normalized = normalizeMemberNumber(memberNumber);
+  const normalized = memberNumber.trim().toUpperCase();
   
   const { data, error } = await supabase
     .from('members')
@@ -32,29 +20,32 @@ export async function verifyMember(memberNumber: string): Promise<Member> {
   return data;
 }
 
-export async function signInMember(memberNumber: string): Promise<User | null> {
+export async function signInMember(memberNumber: string): Promise<any> {
   console.log('Attempting to sign in member:', memberNumber);
-  const normalized = normalizeMemberNumber(memberNumber);
-  const email = `${normalized}@temp.pwaburton.org`;
-
+  const normalized = memberNumber.trim().toUpperCase();
+  
   try {
-    // Try to sign in first
+    // First verify the member exists and get their email
+    const member = await verifyMember(normalized);
+    if (!member.email) {
+      throw new Error('No email found for this member');
+    }
+
+    // Attempt to sign in
     const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-      email,
+      email: member.email,
       password: normalized,
     });
 
-    // If sign in succeeds, return the user
-    if (signInData.user) {
-      console.log('Sign in successful:', signInData.user.id);
-      return signInData.user;
+    if (signInError) {
+      console.error('Sign in error:', signInError);
+      throw signInError;
     }
 
-    // If sign in fails due to no user existing, create one
-    if (signInError && signInError.message.includes('Invalid login credentials')) {
-      console.log('User does not exist, creating new account');
+    if (!signInData.user) {
+      // If sign in fails, try to create the account
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-        email,
+        email: member.email,
         password: normalized,
         options: {
           data: {
@@ -79,13 +70,7 @@ export async function signInMember(memberNumber: string): Promise<User | null> {
       return signUpData.user;
     }
 
-    // If there was a different error during sign in, throw it
-    if (signInError) {
-      console.error('Sign in error:', signInError);
-      throw signInError;
-    }
-
-    return null;
+    return signInData.user;
   } catch (error) {
     console.error('Authentication error:', error);
     throw error;
