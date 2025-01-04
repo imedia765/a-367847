@@ -39,10 +39,7 @@ export async function signInMember(memberNumber: string): Promise<any> {
 
     if (signInError) {
       console.error('Sign in error:', signInError);
-      throw signInError;
-    }
-
-    if (!signInData.user) {
+      
       // If sign in fails, try to create the account
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: member.email,
@@ -61,10 +58,14 @@ export async function signInMember(memberNumber: string): Promise<any> {
 
       // Update member record with auth_user_id
       if (signUpData.user) {
-        await supabase
+        const { error: updateError } = await supabase
           .from('members')
           .update({ auth_user_id: signUpData.user.id })
           .eq('member_number', normalized);
+
+        if (updateError) {
+          console.error('Error updating member with auth_user_id:', updateError);
+        }
       }
 
       return signUpData.user;
