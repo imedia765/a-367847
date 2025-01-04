@@ -1,9 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Database } from '@/types/database.types';
 
-type UserRole = Database['public']['Tables']['user_roles']['Row']['role'] | null;
+export type UserRole = 'admin' | 'collector' | 'member' | null;
 
 const ROLE_STALE_TIME = 1000 * 60 * 5; // 5 minutes
 
@@ -23,32 +22,48 @@ export const useRoleAccess = () => {
 
       console.log('Session user in central role check:', session.user.id);
 
-      try {
-        const { data: role, error: rpcError } = await supabase.rpc('get_user_role', {
-          user_auth_id: session.user.id
-        });
+      // First check user_roles table
+      const { data: roleData, error: roleError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', session.user.id)
+        .maybeSingle();
 
-        if (rpcError) {
-          console.error('Error fetching role in central hook:', rpcError);
-          toast({
-            title: "Error fetching role",
-            description: rpcError.message,
-            variant: "destructive",
-          });
-          throw rpcError;
-        }
-
-        console.log('Fetched role from central hook:', role);
-        return role as UserRole;
-      } catch (error) {
-        console.error('Unexpected error in role fetch:', error);
+      if (roleError) {
+        console.error('Error fetching role from user_roles:', roleError);
         toast({
           title: "Error",
-          description: "Failed to fetch user role. Please try again.",
+          description: roleError.message,
           variant: "destructive",
         });
-        throw error;
+        throw roleError;
       }
+
+      if (roleData?.role) {
+        console.log('Found role in user_roles:', roleData.role);
+        return roleData.role as UserRole;
+      }
+
+      // If no role in user_roles, check if user is a collector in members table
+      const { data: memberData, error: memberError } = await supabase
+        .from('members')
+        .select('collector')
+        .eq('auth_user_id', session.user.id)
+        .maybeSingle();
+
+      if (memberError) {
+        console.error('Error checking member collector status:', memberError);
+        return 'member' as UserRole;
+      }
+
+      if (memberData?.collector) {
+        console.log('User is a collector:', memberData.collector);
+        return 'collector' as UserRole;
+      }
+
+      // Default to member role
+      console.log('Defaulting to member role');
+      return 'member' as UserRole;
     },
     staleTime: ROLE_STALE_TIME,
     retry: 2,

@@ -1,118 +1,82 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import DashboardView from '@/components/DashboardView';
-import MembersList from '@/components/MembersList';
-import CollectorsList from '@/components/CollectorsList';
-import SidePanel from '@/components/SidePanel';
-import { useRole } from '@/contexts/RoleContext';
+import SidePanel from "@/components/SidePanel";
+import DashboardView from "@/components/DashboardView";
+import CollectorsList from "@/components/CollectorsList";
+import SettingsView from "@/components/settings/SettingsView";
+import { useRoleAccess } from "@/hooks/useRoleAccess";
 import { useToast } from "@/hooks/use-toast";
-import { Skeleton } from "@/components/ui/skeleton";
+import MembersList from "@/components/MembersList";
+import { Input } from "@/components/ui/input";
 
 const Index = () => {
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [activeTab, setActiveTab] = useState("dashboard");
+  const [searchTerm, setSearchTerm] = useState("");
+  const { userRole, roleLoading } = useRoleAccess();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { userRole, isLoading, error, canAccessTab } = useRole();
-
-  const checkAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      navigate('/login');
-    }
-  };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate('/login');
-  };
-
-  useEffect(() => {
-    checkAuth();
-  }, []);
-
-  useEffect(() => {
-    if (!isLoading && !canAccessTab(activeTab)) {
-      setActiveTab('dashboard');
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
       toast({
-        title: "Access Restricted",
-        description: "You don't have permission to access this section.",
+        title: "Logged out successfully",
+        description: "You have been logged out of your account",
+      });
+      
+      navigate("/login");
+    } catch (error: any) {
+      toast({
+        title: "Error logging out",
+        description: error.message,
         variant: "destructive",
       });
     }
-  }, [activeTab, isLoading, userRole]);
+  };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-dashboard-dark">
-        <div className="pl-64">
-          <div className="p-8">
-            <Skeleton className="h-8 w-48 mb-4 bg-white/5" />
-            <Skeleton className="h-64 w-full bg-white/5" />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-dashboard-dark flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-xl text-red-400 mb-4">Error loading user role</h2>
-          <button 
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors"
-          >
-            Retry
-          </button>
-        </div>
-      </div>
-    );
+  if (roleLoading) {
+    return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
   }
 
   const renderContent = () => {
-    if (!canAccessTab(activeTab)) {
-      return <DashboardView onLogout={handleLogout} />;
-    }
-
+    console.log('Rendering content for tab:', activeTab, 'User role:', userRole);
+    
     switch (activeTab) {
-      case 'dashboard':
+      case "dashboard":
         return <DashboardView onLogout={handleLogout} />;
-      case 'users':
+      case "users":
         return (
-          <>
-            <header className="mb-8">
-              <h1 className="text-3xl font-medium mb-2 text-white">Members</h1>
-              <p className="text-dashboard-muted">View and manage member information</p>
-            </header>
+          <div className="p-6">
+            <div className="mb-6">
+              <Input
+                type="text"
+                placeholder="Search members..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="max-w-md"
+              />
+            </div>
             <MembersList searchTerm={searchTerm} userRole={userRole} />
-          </>
+          </div>
         );
-      case 'collectors':
-        return (
-          <>
-            <header className="mb-8">
-              <h1 className="text-3xl font-medium mb-2 text-white">Collectors</h1>
-              <p className="text-dashboard-muted">View and manage collector information</p>
-            </header>
-            <CollectorsList />
-          </>
-        );
+      case "collectors":
+        return <CollectorsList />;
+      case "settings":
+        return <SettingsView />;
       default:
-        return null;
+        return <DashboardView onLogout={handleLogout} />;
     }
   };
 
   return (
-    <div className="min-h-screen bg-dashboard-dark">
-      <SidePanel onTabChange={setActiveTab} />
-      <div className="pl-64">
-        <div className="p-8">
-          {renderContent()}
-        </div>
-      </div>
+    <div className="flex min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white">
+      <SidePanel onTabChange={setActiveTab} userRole={userRole} />
+      <main className="flex-1 ml-64">
+        {renderContent()}
+      </main>
     </div>
   );
 };

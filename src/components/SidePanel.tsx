@@ -1,18 +1,16 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LayoutDashboard, Settings, Users, UserCheck } from "lucide-react";
-import { useRole } from "@/contexts/RoleContext";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useToast } from "@/hooks/use-toast";
+import { UserRole } from "@/hooks/useRoleAccess";
+import { useEffect } from "react";
 
 interface SidePanelProps {
   onTabChange: (value: string) => void;
+  userRole: UserRole;
 }
 
-const SidePanel = ({ onTabChange }: SidePanelProps) => {
-  const { userRole, isLoading, error, canAccessTab } = useRole();
-  const { toast } = useToast();
-
+const SidePanel = ({ onTabChange, userRole }: SidePanelProps) => {
   const getTabs = () => {
+    console.log('Getting tabs for role:', userRole);
     const tabs = [
       {
         value: 'dashboard',
@@ -22,7 +20,7 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
       },
       {
         value: 'users',
-        label: 'Users',
+        label: 'Members',
         icon: Users,
         roles: ['collector', 'admin']
       },
@@ -41,29 +39,16 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
     ];
 
     // Only show tabs that the user has access to based on their role
-    return tabs.filter(tab => canAccessTab(tab.value));
+    return tabs.filter(tab => {
+      if (!userRole) return false;
+      return tab.roles.includes(userRole);
+    });
   };
 
-  if (isLoading) {
-    return (
-      <div className="h-screen fixed left-0 top-0 w-64 glass-card border-r border-white/10 p-6">
-        <h2 className="text-xl font-medium mb-6">Navigation</h2>
-        <div className="space-y-2">
-          {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-10 w-full bg-white/5" />
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    toast({
-      title: "Error loading navigation",
-      description: "Please refresh the page to try again",
-      variant: "destructive",
-    });
-  }
+  // Log role changes
+  useEffect(() => {
+    console.log('SidePanel userRole changed:', userRole);
+  }, [userRole]);
 
   return (
     <div className="h-screen fixed left-0 top-0 w-64 glass-card border-r border-white/10">
