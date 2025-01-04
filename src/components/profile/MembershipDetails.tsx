@@ -1,32 +1,31 @@
 import RoleBadge from './RoleBadge';
+import { Member } from '@/types/member';
 
 interface MembershipDetailsProps {
-  memberNumber: string;
-  role: string | null;
-  membershipType?: string;
-  status?: string;
+  memberProfile: Member;
+  userRole: string | null;
 }
 
-const MembershipDetails = ({ memberNumber, role, membershipType = 'standard', status = 'active' }: MembershipDetailsProps) => {
+const MembershipDetails = ({ memberProfile, userRole }: MembershipDetailsProps) => {
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold">Membership Details</h3>
-        <RoleBadge role={role} />
+        <RoleBadge role={userRole} />
       </div>
       
       <div className="grid gap-2">
         <div>
           <span className="text-sm text-gray-500">Member Number:</span>
-          <span className="ml-2">{memberNumber}</span>
+          <span className="ml-2">{memberProfile.member_number}</span>
         </div>
         <div>
           <span className="text-sm text-gray-500">Type:</span>
-          <span className="ml-2 capitalize">{membershipType}</span>
+          <span className="ml-2 capitalize">{memberProfile.membership_type || 'standard'}</span>
         </div>
         <div>
           <span className="text-sm text-gray-500">Status:</span>
-          <span className="ml-2 capitalize">{status}</span>
+          <span className="ml-2 capitalize">{memberProfile.status || 'active'}</span>
         </div>
       </div>
     </div>
