@@ -22,8 +22,10 @@ const RolesTable = () => {
         .select(`
           full_name,
           member_number,
-          number,
-          auth_user_id
+          auth_user_id,
+          members_collectors (
+            number
+          )
         `)
         .filter('auth_user_id', 'in', (
           supabase
@@ -43,8 +45,10 @@ const RolesTable = () => {
         .select(`
           full_name,
           member_number,
-          number,
-          auth_user_id
+          auth_user_id,
+          members_collectors (
+            number
+          )
         `)
         .filter('auth_user_id', 'in', (
           supabase
@@ -62,14 +66,14 @@ const RolesTable = () => {
       const admins: RoleMember[] = (adminData || []).map(item => ({
         full_name: item.full_name,
         member_number: item.member_number,
-        collector_number: item.number || '',
+        collector_number: item.members_collectors?.[0]?.number || '',
         role: 'admin'
       }));
 
       const collectors: RoleMember[] = (collectorData || []).map(item => ({
         full_name: item.full_name,
         member_number: item.member_number,
-        collector_number: item.number || '',
+        collector_number: item.members_collectors?.[0]?.number || '',
         role: 'collector'
       }));
 
