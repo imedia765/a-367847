@@ -44,9 +44,9 @@ const PaymentDialog = ({ memberProfile }: PaymentDialogProps) => {
             <p className="text-dashboard-accent2 text-lg font-bold">
               Member #{memberProfile?.member_number}
             </p>
-            {memberProfile?.collector_id && (
+            {memberProfile?.collector && (
               <p className="text-white text-base font-medium">
-                Collector ID: {memberProfile.collector_id}
+                Collector: {memberProfile.collector}
               </p>
             )}
           </div>
