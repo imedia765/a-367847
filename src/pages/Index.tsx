@@ -6,6 +6,7 @@ import DashboardView from '@/components/DashboardView';
 import MembersList from '@/components/MembersList';
 import CollectorsList from '@/components/CollectorsList';
 import MemberAnalyzer from '@/components/settings/MemberAnalyzer';
+import RolesList from '@/components/RolesList';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -24,7 +25,12 @@ const Index = () => {
 
     switch (activeTab) {
       case 'dashboard':
-        return <DashboardView onLogout={handleLogout} />;
+        return (
+          <div className="space-y-8">
+            <DashboardView onLogout={handleLogout} />
+            <RolesList />
+          </div>
+        );
       case 'users':
         return <MembersList searchTerm={searchTerm} userRole={userRole} />;
       case 'collectors':
