@@ -21,7 +21,7 @@ const RolesTable = () => {
         .from('user_roles')
         .select(`
           role,
-          members!inner (
+          members (
             full_name,
             member_number,
             number
@@ -39,7 +39,7 @@ const RolesTable = () => {
         .from('user_roles')
         .select(`
           role,
-          members!inner (
+          members (
             full_name,
             member_number,
             number
@@ -54,16 +54,16 @@ const RolesTable = () => {
 
       // Transform the data
       const admins = adminData?.map(item => ({
-        full_name: item.members.full_name,
-        member_number: item.members.member_number,
-        collector_number: item.members.number,
+        full_name: item.members?.full_name || '',
+        member_number: item.members?.member_number || '',
+        collector_number: item.members?.number || '',
         role: 'admin'
       })) || [];
 
       const collectors = collectorData?.map(item => ({
-        full_name: item.members.full_name,
-        member_number: item.members.member_number,
-        collector_number: item.members.number,
+        full_name: item.members?.full_name || '',
+        member_number: item.members?.member_number || '',
+        collector_number: item.members?.number || '',
         role: 'collector'
       })) || [];
 

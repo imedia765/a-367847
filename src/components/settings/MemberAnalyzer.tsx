@@ -22,12 +22,12 @@ const MemberAnalyzer = () => {
       const { data: collectorData } = await supabase
         .from('members_collectors')
         .select('*')
-        .single();
+        .maybeSingle();
 
       const { data: memberData } = await supabase
         .from('members')
         .select('*')
-        .single();
+        .maybeSingle();
 
       return {
         tables,
