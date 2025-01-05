@@ -12,31 +12,25 @@ interface RoleMember {
   collector_number?: string;
 }
 
-interface UserRoleResponse {
-  role: 'admin' | 'collector';
-  members: {
-    full_name: string;
-    member_number: string;
-    number?: string;
-  } | null;
-}
-
 const RolesTable = () => {
   const { data: members, isLoading } = useQuery({
     queryKey: ['roles-members'],
     queryFn: async () => {
       // First get all users with admin role
       const { data: adminData, error: adminError } = await supabase
-        .from('user_roles')
+        .from('members')
         .select(`
-          role,
-          members (
-            full_name,
-            member_number,
-            number
-          )
+          full_name,
+          member_number,
+          number,
+          auth_user_id
         `)
-        .eq('role', 'admin') as { data: UserRoleResponse[] | null, error: any };
+        .filter('auth_user_id', 'in', (
+          supabase
+            .from('user_roles')
+            .select('user_id')
+            .eq('role', 'admin')
+        ));
 
       if (adminError) {
         console.error('Error fetching admins:', adminError);
@@ -45,16 +39,19 @@ const RolesTable = () => {
 
       // Then get all collectors
       const { data: collectorData, error: collectorError } = await supabase
-        .from('user_roles')
+        .from('members')
         .select(`
-          role,
-          members (
-            full_name,
-            member_number,
-            number
-          )
+          full_name,
+          member_number,
+          number,
+          auth_user_id
         `)
-        .eq('role', 'collector') as { data: UserRoleResponse[] | null, error: any };
+        .filter('auth_user_id', 'in', (
+          supabase
+            .from('user_roles')
+            .select('user_id')
+            .eq('role', 'collector')
+        ));
 
       if (collectorError) {
         console.error('Error fetching collectors:', collectorError);
@@ -63,16 +60,16 @@ const RolesTable = () => {
 
       // Transform the data
       const admins: RoleMember[] = (adminData || []).map(item => ({
-        full_name: item.members?.full_name || '',
-        member_number: item.members?.member_number || '',
-        collector_number: item.members?.number || '',
+        full_name: item.full_name,
+        member_number: item.member_number,
+        collector_number: item.number || '',
         role: 'admin'
       }));
 
       const collectors: RoleMember[] = (collectorData || []).map(item => ({
-        full_name: item.members?.full_name || '',
-        member_number: item.members?.member_number || '',
-        collector_number: item.members?.number || '',
+        full_name: item.full_name,
+        member_number: item.member_number,
+        collector_number: item.number || '',
         role: 'collector'
       }));
 
