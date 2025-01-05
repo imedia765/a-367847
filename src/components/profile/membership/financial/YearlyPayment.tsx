@@ -34,7 +34,7 @@ const YearlyPayment = ({ memberProfile }: YearlyPaymentProps) => {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <span className="text-dashboard-muted">Amount:</span>
-          <span className="text-dashboard-text font-medium text-lg">
+          <span className="text-dashboard-accent2 font-medium text-lg">
             {formatCurrency(yearlyAmount)}
           </span>
         </div>
