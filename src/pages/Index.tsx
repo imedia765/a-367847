@@ -1,80 +1,45 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import SidePanel from "@/components/SidePanel";
-import DashboardView from "@/components/DashboardView";
-import CollectorsList from "@/components/CollectorsList";
-import SettingsView from "@/components/settings/SettingsView";
-import { useRoleAccess } from "@/hooks/useRoleAccess";
-import { useToast } from "@/hooks/use-toast";
-import MembersList from "@/components/MembersList";
-import { Input } from "@/components/ui/input";
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useRoleAccess } from '@/hooks/useRoleAccess';
+import SidePanel from '@/components/SidePanel';
+import DashboardView from '@/components/DashboardView';
+import MembersList from '@/components/MembersList';
+import CollectorsList from '@/components/CollectorsList';
+import MemberAnalyzer from '@/components/settings/MemberAnalyzer';
 
 const Index = () => {
-  const [activeTab, setActiveTab] = useState("dashboard");
-  const [searchTerm, setSearchTerm] = useState("");
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [searchTerm, setSearchTerm] = useState('');
   const { userRole, roleLoading } = useRoleAccess();
   const navigate = useNavigate();
-  const { toast } = useToast();
 
-  const handleLogout = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      
-      toast({
-        title: "Logged out successfully",
-        description: "You have been logged out of your account",
-      });
-      
-      navigate("/login");
-    } catch (error: any) {
-      toast({
-        title: "Error logging out",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
+  const handleLogout = () => {
+    navigate('/login');
   };
 
-  if (roleLoading) {
-    return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
-  }
-
   const renderContent = () => {
-    console.log('Rendering content for tab:', activeTab, 'User role:', userRole);
-    
+    if (roleLoading) {
+      return <div>Loading...</div>;
+    }
+
     switch (activeTab) {
-      case "dashboard":
+      case 'dashboard':
         return <DashboardView onLogout={handleLogout} />;
-      case "users":
-        return (
-          <div className="p-6">
-            <div className="mb-6">
-              <Input
-                type="text"
-                placeholder="Search members..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="max-w-md"
-              />
-            </div>
-            <MembersList searchTerm={searchTerm} userRole={userRole} />
-          </div>
-        );
-      case "collectors":
+      case 'users':
+        return <MembersList searchTerm={searchTerm} userRole={userRole} />;
+      case 'collectors':
         return <CollectorsList />;
-      case "settings":
-        return <SettingsView />;
+      case 'settings':
+        return <MemberAnalyzer />;
       default:
         return <DashboardView onLogout={handleLogout} />;
     }
   };
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white">
+    <div className="flex min-h-screen bg-dashboard-background text-dashboard-text">
       <SidePanel onTabChange={setActiveTab} userRole={userRole} />
-      <main className="flex-1 ml-64">
+      <main className="flex-1 ml-64 p-8">
         {renderContent()}
       </main>
     </div>
