@@ -12,6 +12,15 @@ interface RoleMember {
   collector_number?: string;
 }
 
+interface UserRoleResponse {
+  role: 'admin' | 'collector';
+  members: {
+    full_name: string;
+    member_number: string;
+    number?: string;
+  } | null;
+}
+
 const RolesTable = () => {
   const { data: members, isLoading } = useQuery({
     queryKey: ['roles-members'],
@@ -27,7 +36,7 @@ const RolesTable = () => {
             number
           )
         `)
-        .eq('role', 'admin');
+        .eq('role', 'admin') as { data: UserRoleResponse[] | null, error: any };
 
       if (adminError) {
         console.error('Error fetching admins:', adminError);
@@ -45,7 +54,7 @@ const RolesTable = () => {
             number
           )
         `)
-        .eq('role', 'collector');
+        .eq('role', 'collector') as { data: UserRoleResponse[] | null, error: any };
 
       if (collectorError) {
         console.error('Error fetching collectors:', collectorError);
@@ -53,19 +62,19 @@ const RolesTable = () => {
       }
 
       // Transform the data
-      const admins = adminData?.map(item => ({
+      const admins: RoleMember[] = (adminData || []).map(item => ({
         full_name: item.members?.full_name || '',
         member_number: item.members?.member_number || '',
         collector_number: item.members?.number || '',
         role: 'admin'
-      })) || [];
+      }));
 
-      const collectors = collectorData?.map(item => ({
+      const collectors: RoleMember[] = (collectorData || []).map(item => ({
         full_name: item.members?.full_name || '',
         member_number: item.members?.member_number || '',
         collector_number: item.members?.number || '',
         role: 'collector'
-      })) || [];
+      }));
 
       return [...admins, ...collectors];
     }
