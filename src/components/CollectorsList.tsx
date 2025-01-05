@@ -30,7 +30,6 @@ const CollectorsList = () => {
     queryFn: async () => {
       console.log('Fetching collectors...');
       
-      // First get all collectors
       const { data: collectorsData, error: collectorsError } = await supabase
         .from('members_collectors')
         .select(`
@@ -53,7 +52,6 @@ const CollectorsList = () => {
         return [];
       }
 
-      // Then enhance with member counts
       return await Promise.all(collectorsData.map(async (collector) => {
         const { count, error: countError } = await supabase
           .from('members')
@@ -99,32 +97,46 @@ const CollectorsList = () => {
   return (
     <div className="space-y-4">
       {collectors?.map((collector) => (
-        <Card key={collector.id} className="p-4">
+        <Card 
+          key={collector.id} 
+          className="p-6 bg-dashboard-card hover:bg-dashboard-card/90 transition-all duration-300 border-dashboard-accent1/10 hover:border-dashboard-accent1/20"
+        >
           <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold text-dashboard-text">
-                {collector.name}
-              </h3>
-              <p className="text-sm text-dashboard-muted">
-                Member Number: {collector.memberNumber || 'Not assigned'}
-              </p>
-              <div className="flex items-center gap-2 mt-2">
-                <Badge variant="outline" className="bg-dashboard-accent2/20 text-dashboard-accent2 border-0">
+            <div className="space-y-3">
+              <div>
+                <h3 className="text-xl font-semibold text-dashboard-accent1">
+                  {collector.name}
+                </h3>
+                <p className="text-sm text-dashboard-muted mt-1">
+                  Member Number: {collector.memberNumber || 'Not assigned'}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge 
+                  variant="outline" 
+                  className="bg-dashboard-accent2/10 text-dashboard-accent2 border-dashboard-accent2/20 hover:bg-dashboard-accent2/15"
+                >
                   <UserCheck className="w-3 h-3 mr-1" />
                   {collector.memberCount} Members
                 </Badge>
                 {collector.active ? (
-                  <Badge variant="outline" className="bg-dashboard-accent3/20 text-dashboard-accent3 border-0">
+                  <Badge 
+                    variant="outline" 
+                    className="bg-dashboard-accent3/10 text-dashboard-accent3 border-dashboard-accent3/20 hover:bg-dashboard-accent3/15"
+                  >
                     Active
                   </Badge>
                 ) : (
-                  <Badge variant="outline" className="bg-dashboard-muted/20 text-dashboard-muted border-0">
+                  <Badge 
+                    variant="outline" 
+                    className="bg-dashboard-muted/10 text-dashboard-muted border-dashboard-muted/20"
+                  >
                     Inactive
                   </Badge>
                 )}
               </div>
             </div>
-            <Users className="w-8 h-8 text-dashboard-muted" />
+            <Users className="w-10 h-10 text-dashboard-accent1/20" />
           </div>
         </Card>
       ))}
