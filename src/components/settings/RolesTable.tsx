@@ -16,29 +16,58 @@ const RolesTable = () => {
   const { data: members, isLoading } = useQuery({
     queryKey: ['roles-members'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('members')
+      // First get all users with admin role
+      const { data: adminData, error: adminError } = await supabase
+        .from('user_roles')
         .select(`
-          full_name,
-          member_number,
-          number as collector_number,
-          user_roles (
-            role
+          role,
+          members!inner (
+            full_name,
+            member_number,
+            number
           )
         `)
-        .order('member_number');
+        .eq('role', 'admin');
 
-      if (error) {
-        console.error('Error fetching members:', error);
+      if (adminError) {
+        console.error('Error fetching admins:', adminError);
         return [];
       }
 
-      return data.map(member => ({
-        full_name: member.full_name,
-        member_number: member.member_number,
-        collector_number: member.collector_number,
-        role: member.user_roles?.[0]?.role || 'member'
-      })) as RoleMember[];
+      // Then get all collectors
+      const { data: collectorData, error: collectorError } = await supabase
+        .from('user_roles')
+        .select(`
+          role,
+          members!inner (
+            full_name,
+            member_number,
+            number
+          )
+        `)
+        .eq('role', 'collector');
+
+      if (collectorError) {
+        console.error('Error fetching collectors:', collectorError);
+        return [];
+      }
+
+      // Transform the data
+      const admins = adminData?.map(item => ({
+        full_name: item.members.full_name,
+        member_number: item.members.member_number,
+        collector_number: item.members.number,
+        role: 'admin'
+      })) || [];
+
+      const collectors = collectorData?.map(item => ({
+        full_name: item.members.full_name,
+        member_number: item.members.member_number,
+        collector_number: item.members.number,
+        role: 'collector'
+      })) || [];
+
+      return [...admins, ...collectors];
     }
   });
 
