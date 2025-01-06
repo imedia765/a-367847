@@ -26,7 +26,7 @@ const TotalCount = ({ items, count, label, icon }: TotalCountProps) => {
             {item.icon}
             <div>
               <p className="text-xs sm:text-sm text-dashboard-muted line-clamp-1">{item.label}</p>
-              <p className="text-lg sm:text-xl md:text-2xl font-semibold">{item.count}</p>
+              <p className="text-lg sm:text-xl md:text-2xl font-semibold text-dashboard-accent1">{item.count}</p>
             </div>
           </div>
         ))}
