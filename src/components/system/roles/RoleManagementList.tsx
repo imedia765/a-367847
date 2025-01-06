@@ -87,8 +87,11 @@ const RoleManagementList = () => {
           user_id: member.auth_user_id || '',
           full_name: member.full_name,
           member_number: member.member_number,
-          role: (member.user_roles?.[0] as UserRoleData)?.role || 'member',
-          roles: (member.user_roles as UserRoleData[])?.map(ur => ur.role) || []
+          role: member.user_roles?.[0]?.role || 'member',
+          auth_user_id: member.auth_user_id || '',
+          user_roles: Array.isArray(member.user_roles) 
+            ? member.user_roles.map(ur => ({ role: ur.role }))
+            : []
         }));
       } catch (error: any) {
         console.error('Error in user fetch:', error);
