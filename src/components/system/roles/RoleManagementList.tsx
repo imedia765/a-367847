@@ -9,6 +9,10 @@ import { Database } from "@/integrations/supabase/types";
 
 type UserRole = Database['public']['Enums']['app_role'];
 
+interface UserRoleData {
+  role: UserRole;
+}
+
 interface UserData {
   id: string;
   user_id: string;
@@ -16,7 +20,7 @@ interface UserData {
   member_number: string;
   role: UserRole;
   auth_user_id: string;
-  user_roles: Array<{ role: UserRole }>;
+  user_roles: UserRoleData[];
 }
 
 const ITEMS_PER_PAGE = 10;
@@ -44,7 +48,10 @@ const RoleManagementList = () => {
 
         if (rolesError) throw rolesError;
 
-        const isAdmin = currentUserRoles?.some(role => role.role === 'admin');
+        const isAdmin = currentUserRoles?.some(role => 
+          typeof role === 'object' && 'role' in role && role.role === 'admin'
+        );
+        
         if (!isAdmin) {
           throw new Error('Unauthorized: Admin access required');
         }
@@ -80,8 +87,8 @@ const RoleManagementList = () => {
           user_id: member.auth_user_id || '',
           full_name: member.full_name,
           member_number: member.member_number,
-          role: member.user_roles[0]?.role || 'member',
-          roles: member.user_roles.map(ur => ur.role)
+          role: (member.user_roles?.[0] as UserRoleData)?.role || 'member',
+          roles: (member.user_roles as UserRoleData[])?.map(ur => ur.role) || []
         }));
       } catch (error: any) {
         console.error('Error in user fetch:', error);
@@ -95,7 +102,7 @@ const RoleManagementList = () => {
     },
   });
 
-  const handleRoleChange = async (userId: string, newRole: Database['public']['Enums']['app_role']) => {
+  const handleRoleChange = async (userId: string, newRole: UserRole) => {
     try {
       // Update will be handled by RoleSelect component
       await queryClient.invalidateQueries({ queryKey: ['users'] });
