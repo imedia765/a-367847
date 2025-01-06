@@ -1,7 +1,7 @@
 import { Users } from 'lucide-react';
 
 interface TotalCountItem {
-  count: number;
+  count: number | string;
   label: string;
   icon?: React.ReactNode;
 }
@@ -9,7 +9,7 @@ interface TotalCountItem {
 interface TotalCountProps {
   items?: TotalCountItem[];
   // Support for legacy props
-  count?: number;
+  count?: number | string;
   label?: string;
   icon?: React.ReactNode;
 }

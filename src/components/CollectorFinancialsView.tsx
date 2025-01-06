@@ -7,7 +7,7 @@ import CollectorsSummary from './financials/CollectorsSummary';
 import AllPaymentsTable from './financials/AllPaymentsTable';
 import CollectorsList from './CollectorsList';
 import { Card } from "@/components/ui/card";
-import { Wallet, Users, Receipt } from "lucide-react";
+import { Wallet, Users, Receipt, PoundSterling } from "lucide-react";
 import TotalCount from './TotalCount';
 
 const CollectorFinancialsView = () => {
@@ -20,7 +20,7 @@ const CollectorFinancialsView = () => {
       
       const { data: payments, error: paymentsError } = await supabase
         .from('payment_requests')
-        .select('amount, status');
+        .select('amount, status, payment_type');
       
       if (paymentsError) {
         console.error('Error fetching payments:', paymentsError);
@@ -36,6 +36,15 @@ const CollectorFinancialsView = () => {
         throw collectorsError;
       }
 
+      const { data: members, error: membersError } = await supabase
+        .from('members')
+        .select('yearly_payment_amount, emergency_collection_amount, yearly_payment_status, emergency_collection_status');
+
+      if (membersError) {
+        console.error('Error fetching members:', membersError);
+        throw membersError;
+      }
+
       const totalAmount = payments?.reduce((sum, payment) => 
         payment.status === 'approved' ? sum + Number(payment.amount) : sum, 0
       ) || 0;
@@ -44,9 +53,21 @@ const CollectorFinancialsView = () => {
         payment.status === 'pending' ? sum + Number(payment.amount) : sum, 0
       ) || 0;
 
+      const totalYearlyDue = members?.reduce((sum, member) => 
+        sum + (member.yearly_payment_amount || 40), 0
+      ) || 0;
+
+      const totalEmergencyDue = members?.reduce((sum, member) => 
+        sum + (member.emergency_collection_amount || 0), 0
+      ) || 0;
+
+      const totalCollectionDue = totalYearlyDue + totalEmergencyDue;
+      const remainingCollection = totalCollectionDue - totalAmount;
+
       return {
         totalCollected: totalAmount,
         pendingAmount: pendingAmount,
+        remainingAmount: remainingCollection,
         totalCollectors: collectors?.length || 0,
         totalTransactions: payments?.length || 0
       };
@@ -69,8 +90,8 @@ const CollectorFinancialsView = () => {
           <Card className="bg-emerald-500/10 border-emerald-500/20 p-2 sm:p-3 md:p-4 hover:bg-emerald-500/15 transition-colors">
             <TotalCount
               items={[{
-                count: totals.totalCollected,
-                label: "Total Amount Collected (£)",
+                count: `£${totals.totalCollected.toLocaleString()}`,
+                label: "Total Amount Collected",
                 icon: <Wallet className="h-3.5 sm:h-4 md:h-5 w-3.5 sm:w-4 md:w-5 text-emerald-400" />
               }]}
             />
@@ -79,9 +100,19 @@ const CollectorFinancialsView = () => {
           <Card className="bg-amber-500/10 border-amber-500/20 p-2 sm:p-3 md:p-4 hover:bg-amber-500/15 transition-colors">
             <TotalCount
               items={[{
-                count: totals.pendingAmount,
-                label: "Pending Amount (£)",
+                count: `£${totals.pendingAmount.toLocaleString()}`,
+                label: "Pending Amount",
                 icon: <Receipt className="h-3.5 sm:h-4 md:h-5 w-3.5 sm:w-4 md:w-5 text-amber-400" />
+              }]}
+            />
+          </Card>
+          
+          <Card className="bg-rose-500/10 border-rose-500/20 p-2 sm:p-3 md:p-4 hover:bg-rose-500/15 transition-colors">
+            <TotalCount
+              items={[{
+                count: `£${totals.remainingAmount.toLocaleString()}`,
+                label: "Remaining to Collect",
+                icon: <PoundSterling className="h-3.5 sm:h-4 md:h-5 w-3.5 sm:w-4 md:w-5 text-rose-400" />
               }]}
             />
           </Card>
@@ -92,16 +123,6 @@ const CollectorFinancialsView = () => {
                 count: totals.totalCollectors,
                 label: "Active Collectors",
                 icon: <Users className="h-3.5 sm:h-4 md:h-5 w-3.5 sm:w-4 md:w-5 text-indigo-400" />
-              }]}
-            />
-          </Card>
-          
-          <Card className="bg-violet-500/10 border-violet-500/20 p-2 sm:p-3 md:p-4 hover:bg-violet-500/15 transition-colors">
-            <TotalCount
-              items={[{
-                count: totals.totalTransactions,
-                label: "Total Transactions",
-                icon: <Receipt className="h-3.5 sm:h-4 md:h-5 w-3.5 sm:w-4 md:w-5 text-violet-400" />
               }]}
             />
           </Card>
