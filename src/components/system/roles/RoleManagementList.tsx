@@ -56,47 +56,61 @@ const RoleManagementList = () => {
           throw new Error('Unauthorized: Admin access required');
         }
 
-        // Then get paginated members with their roles
-        let query = supabase
+        // First get the members
+        let membersQuery = supabase
           .from('members')
           .select(`
             id,
             auth_user_id,
             full_name,
-            member_number,
-            user_roles!inner (
-              role
-            )
+            member_number
           `)
           .order('created_at', { ascending: false })
           .range(page * ITEMS_PER_PAGE, (page + 1) * ITEMS_PER_PAGE - 1);
 
         if (searchTerm) {
-          query = query.or(`full_name.ilike.%${searchTerm}%,member_number.ilike.%${searchTerm}%`);
+          membersQuery = membersQuery.or(`full_name.ilike.%${searchTerm}%,member_number.ilike.%${searchTerm}%`);
         }
 
-        const { data: membersData, error: membersError } = await query;
+        const { data: membersData, error: membersError } = await membersQuery;
 
         if (membersError) {
           console.error('Error fetching members:', membersError);
           throw membersError;
         }
 
-        return membersData.map(member => ({
-          id: member.id,
-          user_id: member.auth_user_id || '',
-          full_name: member.full_name,
-          member_number: member.member_number,
-          role: Array.isArray(member.user_roles) && member.user_roles.length > 0 
-            ? (member.user_roles[0] as UserRoleData).role 
-            : 'member' as UserRole,
-          auth_user_id: member.auth_user_id || '',
-          user_roles: Array.isArray(member.user_roles) 
-            ? member.user_roles.map(ur => ({ 
-                role: (ur as unknown as UserRoleData).role 
-              }))
-            : []
-        }));
+        // Then get their roles in a separate query
+        const memberAuthIds = membersData
+          .map(m => m.auth_user_id)
+          .filter(id => id !== null) as string[];
+
+        const { data: rolesData, error: userRolesError } = await supabase
+          .from('user_roles')
+          .select('user_id, role')
+          .in('user_id', memberAuthIds);
+
+        if (userRolesError) {
+          console.error('Error fetching user roles:', userRolesError);
+          throw userRolesError;
+        }
+
+        // Map the roles to the members
+        return membersData.map(member => {
+          const userRoles = rolesData
+            .filter(r => r.user_id === member.auth_user_id)
+            .map(r => ({ role: r.role }));
+
+          return {
+            id: member.id,
+            user_id: member.auth_user_id || '',
+            full_name: member.full_name,
+            member_number: member.member_number,
+            role: userRoles.length > 0 ? userRoles[0].role : 'member' as UserRole,
+            auth_user_id: member.auth_user_id || '',
+            user_roles: userRoles
+          };
+        });
+
       } catch (error: any) {
         console.error('Error in user fetch:', error);
         toast({
