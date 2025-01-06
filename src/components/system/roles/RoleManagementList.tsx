@@ -87,10 +87,14 @@ const RoleManagementList = () => {
           user_id: member.auth_user_id || '',
           full_name: member.full_name,
           member_number: member.member_number,
-          role: member.user_roles?.[0]?.role || 'member',
+          role: Array.isArray(member.user_roles) && member.user_roles.length > 0 
+            ? (member.user_roles[0] as UserRoleData).role 
+            : 'member' as UserRole,
           auth_user_id: member.auth_user_id || '',
           user_roles: Array.isArray(member.user_roles) 
-            ? member.user_roles.map(ur => ({ role: ur.role }))
+            ? member.user_roles.map(ur => ({ 
+                role: (ur as unknown as UserRoleData).role 
+              }))
             : []
         }));
       } catch (error: any) {
