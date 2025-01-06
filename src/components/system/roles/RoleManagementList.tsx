@@ -49,10 +49,18 @@ const RoleManagementList = () => {
           throw new Error('Unauthorized: Admin access required');
         }
 
-        // Then get paginated members
+        // Then get paginated members with their roles
         let query = supabase
           .from('members')
-          .select('*')
+          .select(`
+            id,
+            auth_user_id,
+            full_name,
+            member_number,
+            user_roles!inner (
+              role
+            )
+          `)
           .order('created_at', { ascending: false })
           .range(page * ITEMS_PER_PAGE, (page + 1) * ITEMS_PER_PAGE - 1);
 
@@ -67,39 +75,13 @@ const RoleManagementList = () => {
           throw membersError;
         }
 
-        // Then get roles for each member
-        const usersWithRoles = await Promise.all(membersData.map(async (member) => {
-          if (!member.auth_user_id) return { ...member, user_roles: [] };
-
-          try {
-            const { data: roleData, error: roleError } = await supabase
-              .from('user_roles')
-              .select('role')
-              .eq('user_id', member.auth_user_id);
-
-            if (roleError) {
-              console.error('Error fetching roles for member:', member.member_number, roleError);
-              return { ...member, user_roles: [] };
-            }
-
-            return {
-              ...member,
-              user_roles: roleData || []
-            };
-          } catch (error) {
-            console.error('Error in role fetch:', error);
-            return { ...member, user_roles: [] };
-          }
-        }));
-
-        return usersWithRoles.map((user): UserData => ({
-          id: user.id,
-          user_id: user.auth_user_id || '',
-          full_name: user.full_name,
-          member_number: user.member_number,
-          role: user.user_roles[0]?.role || 'member',
-          auth_user_id: user.auth_user_id || '',
-          user_roles: user.user_roles
+        return membersData.map(member => ({
+          id: member.id,
+          user_id: member.auth_user_id || '',
+          full_name: member.full_name,
+          member_number: member.member_number,
+          role: member.user_roles[0]?.role || 'member',
+          roles: member.user_roles.map(ur => ur.role)
         }));
       } catch (error: any) {
         console.error('Error in user fetch:', error);
@@ -112,6 +94,20 @@ const RoleManagementList = () => {
       }
     },
   });
+
+  const handleRoleChange = async (userId: string, newRole: Database['public']['Enums']['app_role']) => {
+    try {
+      // Update will be handled by RoleSelect component
+      await queryClient.invalidateQueries({ queryKey: ['users'] });
+    } catch (error) {
+      console.error('Error in role change:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update role",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
@@ -141,9 +137,7 @@ const RoleManagementList = () => {
               <UserRoleCard
                 key={user.id}
                 user={user}
-                onRoleChange={async () => {
-                  await queryClient.invalidateQueries({ queryKey: ['users'] });
-                }}
+                onRoleChange={handleRoleChange}
               />
             ))}
             {isLoading && page > 0 && (
