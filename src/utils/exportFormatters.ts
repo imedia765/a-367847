@@ -76,13 +76,23 @@ export const openInGoogleSheets = (members: Member[], collectorName?: string) =>
   const content = generateCSVContent(members);
   const blob = new Blob([content], { type: 'text/csv' });
   
-  // Convert blob to base64
-  const reader = new FileReader();
-  reader.readAsDataURL(blob);
-  reader.onload = () => {
-    const base64data = reader.result?.toString().split(',')[1];
-    // Open Google Sheets with the data
-    const sheetsUrl = `https://docs.google.com/spreadsheets/d/e/2PACX-1vQrStG9hzPBQKXHHSX-LhGEQjyRzCKiYmqpZYvgQwPj4pKHDuNHWvj1_aPDVOdgc0QY1MvZq-kR9FKf/pub?output=csv&data=${base64data}`;
+  // Create a temporary URL for the blob
+  const url = window.URL.createObjectURL(blob);
+  
+  // Construct Google Sheets import URL
+  const sheetsUrl = `https://docs.google.com/spreadsheets/d/create?usp=sheets_home&hl=en`;
+  
+  // First, trigger the CSV download
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `members_${collectorName || 'all'}_${new Date().toISOString().split('T')[0]}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  
+  // Then open Google Sheets in a new tab
+  setTimeout(() => {
     window.open(sheetsUrl, '_blank');
-  };
+    window.URL.revokeObjectURL(url);
+  }, 100);
 };
