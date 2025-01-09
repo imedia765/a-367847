@@ -75,19 +75,14 @@ export const downloadCSV = (members: Member[], collectorName?: string) => {
 export const openInGoogleSheets = (members: Member[], collectorName?: string) => {
   const content = generateCSVContent(members);
   const blob = new Blob([content], { type: 'text/csv' });
-  const formData = new FormData();
-  formData.append('file', blob, `members_${collectorName || 'all'}_${new Date().toISOString().split('T')[0]}.csv`);
   
-  // Create a temporary link to download the file
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `members_${collectorName || 'all'}_${new Date().toISOString().split('T')[0]}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  window.URL.revokeObjectURL(url);
-
-  // Open Google Sheets in a new tab
-  window.open('https://docs.google.com/spreadsheets/u/0/create', '_blank');
+  // Convert blob to base64
+  const reader = new FileReader();
+  reader.readAsDataURL(blob);
+  reader.onload = () => {
+    const base64data = reader.result?.toString().split(',')[1];
+    // Open Google Sheets with the data
+    const sheetsUrl = `https://docs.google.com/spreadsheets/d/e/2PACX-1vQrStG9hzPBQKXHHSX-LhGEQjyRzCKiYmqpZYvgQwPj4pKHDuNHWvj1_aPDVOdgc0QY1MvZq-kR9FKf/pub?output=csv&data=${base64data}`;
+    window.open(sheetsUrl, '_blank');
+  };
 };
