@@ -75,8 +75,19 @@ export const downloadCSV = (members: Member[], collectorName?: string) => {
 export const openInGoogleSheets = (members: Member[], collectorName?: string) => {
   const content = generateCSVContent(members);
   const blob = new Blob([content], { type: 'text/csv' });
+  const formData = new FormData();
+  formData.append('file', blob, `members_${collectorName || 'all'}_${new Date().toISOString().split('T')[0]}.csv`);
+  
+  // Create a temporary link to download the file
   const url = window.URL.createObjectURL(blob);
-  const sheetsUrl = `https://docs.google.com/spreadsheets/d/create?usp=sheets_home&ths=true`;
-  window.open(sheetsUrl, '_blank');
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `members_${collectorName || 'all'}_${new Date().toISOString().split('T')[0]}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
   window.URL.revokeObjectURL(url);
+
+  // Open Google Sheets in a new tab
+  window.open('https://docs.google.com/spreadsheets/u/0/create', '_blank');
 };

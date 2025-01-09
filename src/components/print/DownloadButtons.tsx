@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
+import { Download, Sheet } from "lucide-react";
 import { Member } from "@/types/member";
 import { downloadExcel, downloadCSV, openInGoogleSheets } from "@/utils/exportFormatters";
 
@@ -28,9 +28,9 @@ const DownloadButtons = ({ members, collectorName, className = "" }: DownloadBut
       </Button>
       <Button
         onClick={() => openInGoogleSheets(members, collectorName)}
-        className="flex-1 items-center gap-2 bg-dashboard-accent3 hover:bg-dashboard-accent3/80"
+        className="flex-1 items-center gap-2 bg-[#34A853] hover:bg-[#2E9549]"
       >
-        <Download className="w-4 h-4" />
+        <Sheet className="w-4 h-4 text-white" />
         Sheets
       </Button>
     </div>
