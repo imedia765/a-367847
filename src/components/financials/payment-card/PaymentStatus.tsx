@@ -20,29 +20,11 @@ export const PaymentStatus = ({ status }: PaymentStatusProps) => {
     }
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return <Check className="h-6 w-6" />;
-      case 'due':
-        return <Clock className="h-6 w-6" />;
-      case 'overdue':
-        return <AlertOctagon className="h-6 w-6" />;
-      case 'pending':
-        return <Clock className="h-6 w-6" />;
-      default:
-        return <Clock className="h-6 w-6" />;
-    }
-  };
-
   return (
     <div className="flex items-center space-x-3">
       <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold shadow-lg backdrop-blur-sm ${getStatusColor(status)}`}>
         {status}
       </span>
-      <div className="w-12 h-12" style={{ color: getStatusColor(status).split(' ')[1].replace('text-', '') }}>
-        {getStatusIcon(status)}
-      </div>
     </div>
   );
 };
