@@ -4,6 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from '@tanstack/react-query';
 import { clearAuthState, verifyMember, handleSignInError } from './utils/authUtils';
+import { DatabaseFunctions } from '@/integrations/supabase/types/functions';
+
+type FailedLoginResponse = DatabaseFunctions['handle_failed_login']['Returns'];
 
 export const useLoginForm = () => {
   const [memberNumber, setMemberNumber] = useState('');
@@ -83,8 +86,10 @@ export const useLoginForm = () => {
 
         if (failedLoginError) throw failedLoginError;
 
-        if (failedLoginData?.locked) {
-          throw new Error(`Account locked. Too many failed attempts. Please try again after ${failedLoginData.lockout_duration}`);
+        const typedFailedLoginData = failedLoginData as FailedLoginResponse;
+
+        if (typedFailedLoginData.locked) {
+          throw new Error(`Account locked. Too many failed attempts. Please try again after ${typedFailedLoginData.lockout_duration}`);
         }
 
         throw new Error('Invalid member number or password');
