@@ -101,7 +101,6 @@ export const useLoginForm = () => {
         .maybeSingle();
 
       if (memberData?.password_reset_required) {
-        // Redirect to password reset page (you'll need to implement this)
         toast({
           title: "Password reset required",
           description: "Please set a new password for your account",
